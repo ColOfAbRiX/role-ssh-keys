@@ -1,0 +1,70 @@
+---
+
+- name: "Build Information"
+  set_fact:
+     target_key_file: "{{ ssh_config_path }}/{{ host_key.key_file | basename }}"
+
+- name: "Remove Host Key"
+  file: path="{{ target_key_file }}{{ item }}" state=absent
+  when: host_key.state | default('present') == 'absent'
+  with_items: ['', '.pub']
+  notify:
+   - Restart SSH
+
+
+- name: "Test Local Host Key"
+  set_fact:
+    key_present: "{{ lookup('file', host_key.key_file) }}"
+  no_log: true
+  ignore_errors: yes
+  when: host_key.state | default('present') == 'present'
+
+- name: "Create Host Key"
+  ssh_keygen:
+    bits:       "{{ host_key.bits | default(omit) }}"
+    comment:    "{{ host_key.comment | default(omit) }}"
+    force:      "{{ host_key.ignore_present | default(omit) }}"
+    new_format: "{{ host_key.new_format | default(omit) }}"
+    options:    "{{ host_key.options | default(omit) }}"
+    passphrase: "{{ host_key.passphrase | default(omit) }}"
+    path:       "{{ target_key_file }}"
+    rounds:     "{{ host_key.rounds | default(omit) }}"
+    type:       "{{ host_key.type | default(omit) }}"
+  register: user_key_created
+  when: host_key.state | default('present') == 'present' and
+        (key_present is not defined or not key_present)
+
+- name: "Download Host Key"
+  fetch:
+    src:  "{{ target_key_file }}{{ item }}"
+    dest: "{{ host_key.key_file }}{{ item }}"
+    flat: yes
+  when: host_key.state | default('present') == 'present' and
+        (key_present is not defined or not key_present)
+  with_items: ['', '.pub']
+
+
+- name: "Install Host Key"
+  copy:
+    src:    "{{ host_key.key_file }}{{ item.ext }}"
+    dest:   "{{ target_key_file }}{{ item.ext }}"
+    owner:  "{{ item.owner }}"
+    group:  "{{ item.group }}"
+    mode:   "{{ item.mode }}"
+    seuser: system_u
+    serole: object_r
+    setype: sshd_key_t
+  ignore_errors: yes
+  when: host_key.state | default('present') == 'present' and
+        host_key.key_store is defined and
+        not host_key.no_local | default(False) | bool
+  with_items:
+   - { ext: '',     owner: root, group: ssh_keys, mode: '0600' }
+   - { ext: '.pub', owner: root, group: root,     mode: '0644' }
+  notify:
+   - Restart SSH
+
+
+- name: "Clean Variables"
+  set_fact:
+    key_present: !!null

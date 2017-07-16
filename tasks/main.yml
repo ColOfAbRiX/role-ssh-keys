@@ -1,0 +1,40 @@
+---
+# # # # #  Local Users  # # # # #
+
+- name: "Require Correct Linux Distribution"
+  assert:
+    that: ansible_distribution | lower in ['redhat', 'centos', 'sles']
+    msg:  "This Linux distrution is not supported by the role."
+  tags: [openssh, ssh-keys]
+
+- name: "Host Keys Management"
+  include: host_key.yml
+  with_items:
+   - "{{ ssh_host_keys | default([]) }}"
+  loop_control:
+    loop_var: host_key
+  tags: [openssh, ssh-keys]
+
+- name: "User Keys Management"
+  include: user_key.yml
+  with_items:
+   - "{{ ssh_user_keys | default([]) }}"
+  loop_control:
+    loop_var: user_key
+  tags: [openssh, ssh-keys]
+
+- name: "Known Hosts File"
+  include: known_hosts.yml
+  with_items:
+   - "{{ ssh_known_hosts | default([]) }}"
+  loop_control:
+    loop_var: user_known
+  tags: [openssh, ssh-keys]
+
+- name: "Authorized Keys File"
+  include: auth_key.yml
+  with_items:
+   - "{{ ssh_authorized_keys | default([]) }}"
+  loop_control:
+    loop_var: user_key
+  tags: [openssh, ssh-keys]

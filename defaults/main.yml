@@ -1,0 +1,88 @@
+---
+
+# Path of SSH configuration
+ssh_config_path: /etc/ssh
+
+# Base path in the storage of the Host and User Keys
+ssh_keys_base: "../storage/ssh_keys"
+ssh_external_keys_base: "{{ ssh_keys_base }}/externals"
+ssh_host_keys_base: "{{ ssh_keys_base }}/servers"
+ssh_user_keys_base: "{{ ssh_keys_base }}/users"
+
+# List of the Authorized Keys file
+ssh_authkeys_files:
+ - ~/.ssh/authorized_keys
+
+# User SSH Identity files
+ssh_identity_files:
+ - ~/.ssh/id_rsa
+
+# Global path of the users' known_hosts files, including the filename
+ssh_knownhosts_files:
+ - ~/.ssh/known_hosts
+
+
+## Keys Section ##
+
+
+# Definition of the SSH Server Keys
+#
+# Use key from storage
+#ssh_host_keys:
+# - name:     ssh_host_rsa_key
+#   key_file: "{{ ssh_host_keys_base }}/ssh_host_rsa_key"
+#   type:     rsa
+#   bits:     2048
+# - name:     ssh_host_ed25519_key
+#   key_file: "{{ ssh_host_keys_base }}/ssh_host_ed25519_key"
+#   type:     ed25519
+#   bits:     256
+# - name:     ssh_host_ecdsa_key
+#   key_file: "{{ ssh_host_keys_base }}/ssh_host_ecdsa_key"
+#   type:     ecdsa
+#   bits:     256
+ssh_host_keys: []
+
+# User Keys configuration. For the options to create the keys,
+# see the module ssh_keygen
+#
+# ssh_user_keys:
+#  # Uses the key in the local store, but it uses the one on the server and
+#  # if also that one is not present, it creates it.
+#  - username:    user1
+#    state:       present
+#    key_file:    "{{ ssh_user_keys_base }}/user1_key"
+#    target_file: "{{ ssh_identity_files | first }}"
+#    type:        dsa
+#    bits:        2048
+#  # This creates they if not present and discards any existing
+#  # key on the server, if not present locally.
+#  - username:    user1
+#    state:       present
+#    key_file:    "{{ ssh_user_keys_base }}/user1_key"
+#    target_file: "{{ ssh_identity_files | first }}"
+#    ignore_present: yes
+ssh_user_keys: []
+
+# Keys authorized by SSH
+#
+# ssh_authorized_keys:
+#  - username: user1
+#    state: present
+#    key_file: "{{ ssh_user_keys_base }}/user1.pub"
+#  - username: user2
+#    key_options: ""
+#    key_file: "{{ ssh_user_keys_base }}/user2.pub"
+#    authkeys_file: "/etc/ssh/authorized_keys/authorized_keys_global"
+ssh_authorized_keys: []
+
+# List of acknowleded hosts for a specific user
+#
+# ssh_known_hosts:
+# - username: user1
+#   target_file: "{{ ssh_knownhosts_files | first }}"
+#   hosts:
+#    - name:     my_host
+#      state:    present
+#      key_file: "../storage/ssh_keys/servers/my_host.pub"
+ssh_known_hosts: []

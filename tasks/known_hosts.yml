@@ -1,0 +1,11 @@
+---
+
+- name: "Acknowledge Host"
+  become_user: "{{ user_known.username }}"
+  known_hosts:
+    state: "{{ item.state | default(omit) }}"
+    name:  "{{ item.name }}"
+    path:  "{{ user_known.target_file | default(ssh_knownhosts_files | first) }}"
+    key:   "{{ item.name }} {{ lookup('file', item.key_file) }}"
+  with_items:
+   - "{{ user_known.hosts }}"
