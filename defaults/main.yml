@@ -4,10 +4,10 @@
 ssh_config_path: /etc/ssh
 
 # Base path in the storage of the Host and User Keys
-ssh_keys_base: "../storage/ssh_keys"
+ssh_keys_base:          "../storage/ssh_keys"
 ssh_external_keys_base: "{{ ssh_keys_base }}/externals"
-ssh_host_keys_base: "{{ ssh_keys_base }}/servers"
-ssh_user_keys_base: "{{ ssh_keys_base }}/users"
+ssh_host_keys_base:     "{{ ssh_keys_base }}/servers"
+ssh_user_keys_base:     "{{ ssh_keys_base }}/users"
 
 # List of the Authorized Keys file
 ssh_authkeys_files:
