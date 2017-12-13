@@ -1,11 +1,26 @@
 ---
 
+- set_fact:
+    known_hosts_file: "{{ user_known.target_file | default(ssh_knownhosts_files | first) }}"
+
+- name: "SSH User Directory"
+  become_user: "{{ user_known.username }}"
+  file:
+    path:   "{{ known_hosts_file | dirname }}"
+    state:  directory
+    mode:   '0700'
+    seuser: system_u
+    serole: object_r
+    setype: ssh_home_t
+  with_items:
+   - "{{ user_known.hosts }}"
+
 - name: "Acknowledge Host"
   become_user: "{{ user_known.username }}"
   known_hosts:
     state: "{{ item.state | default(omit) }}"
     name:  "{{ item.name }}"
-    path:  "{{ user_known.target_file | default(ssh_knownhosts_files | first) }}"
+    path:  "{{ known_hosts_file }}"
     key:   "{{ item.name }} {{ lookup('file', item.key_file) }}"
   with_items:
    - "{{ user_known.hosts }}"
