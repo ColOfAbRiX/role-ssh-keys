@@ -24,6 +24,7 @@
   tags: [openssh, ssh-keys]
 
 - name: "Known Hosts File"
+  become_user: "{{ user_known.username }}"
   include: known_hosts.yml
   with_items:
    - "{{ ssh_known_hosts | default([]) }}"
