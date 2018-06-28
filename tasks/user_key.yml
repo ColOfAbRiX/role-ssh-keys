@@ -1,5 +1,11 @@
 ---
 
+- name: "Check Host Key Information"
+  assert:
+    that:
+     - (user_key.key_file is defined) != (user_key.key_content is defined)
+    msg: "One and only one of ssh_user_keys.*.key_file or ssh_user_keys.*.key_content must be defined."
+
 - name: "Build Information"
   set_fact:
     target_key_file: "{{ user_key.target_file | default(ssh_identity_files | first) }}"
@@ -16,63 +22,86 @@
   when: user_key.state | default('present') == 'present'
 
 
-- name: "Remove User Key"
-  file: path="{{ item }}" state=absent
-  with_items:
-   - "{{ target_key_file }}"
-   - "{{ target_key_file }}.pub"
-  when: user_key.state | default('present') == 'absent'
+- name: "Managing User Key with Key in File"
+  block:
+
+   - name: "Remove User Key"
+     file: path="{{ item }}" state=absent
+     with_items:
+      - "{{ target_key_file }}"
+      - "{{ target_key_file }}.pub"
+     when: user_key.state | default('present') == 'absent'
 
 
-- name: "Test Local User Key"
-  set_fact:
-    key_present: "{{ lookup('file', user_key.key_file) }}"
-  no_log: true
-  ignore_errors: yes
-  when: user_key.state | default('present') == 'present'
+   - name: "Test Local User Key"
+     set_fact:
+       key_present: "{{ lookup('file', user_key.key_file) }}"
+     no_log: true
+     ignore_errors: yes
+     when: user_key.state | default('present') == 'present'
 
-- name: "Create User Key"
-  become_user: "{{ user_key.username }}"
-  ssh_keygen:
-    bits:       "{{ user_key.bits | default(omit) }}"
-    comment:    "{{ user_key.comment | default(omit) }}"
-    force:      "{{ user_key.ignore_present | default(omit) }}"
-    new_format: "{{ user_key.new_format | default(omit) }}"
-    options:    "{{ user_key.options | default(omit) }}"
-    passphrase: "{{ user_key.passphrase | default(omit) }}"
-    path:       "{{ target_key_file }}"
-    rounds:     "{{ user_key.rounds | default(omit) }}"
-    type:       "{{ user_key.type | default(omit) }}"
-  register: user_key_created
-  when: user_key.state | default('present') == 'present' and
-        (key_present is not defined or not key_present)
+   - name: "Create User Key"
+     become_user: "{{ user_key.username }}"
+     ssh_keygen:
+       bits:       "{{ user_key.bits | default(omit) }}"
+       comment:    "{{ user_key.comment | default(omit) }}"
+       force:      "{{ user_key.ignore_present | default(omit) }}"
+       new_format: "{{ user_key.new_format | default(omit) }}"
+       options:    "{{ user_key.options | default(omit) }}"
+       passphrase: "{{ user_key.passphrase | default(omit) }}"
+       path:       "{{ target_key_file }}"
+       rounds:     "{{ user_key.rounds | default(omit) }}"
+       type:       "{{ user_key.type | default(omit) }}"
+     register: user_key_created
+     when: user_key.state | default('present') == 'present' and
+           (key_present is not defined or not key_present)
 
-- name: "Download User Key"
-  become_user: "{{ user_key.username }}"
-  fetch:
-    src:  "{{ target_key_file }}{{ item }}"
-    dest: "{{ user_key.key_file }}{{ item }}"
-    flat: yes
-  when: user_key.state | default('present') == 'present' and
-        (key_present is not defined or not key_present)
-  with_items: ['', '.pub']
+   - name: "Download User Key"
+     become_user: "{{ user_key.username }}"
+     fetch:
+       src:  "{{ target_key_file }}{{ item }}"
+       dest: "{{ user_key.key_file }}{{ item }}"
+       flat: yes
+     when: user_key.state | default('present') == 'present' and
+           (key_present is not defined or not key_present)
+     with_items: ['', '.pub']
 
 
-- name: "Install User Key"
+   - name: "Install User Key"
+     become_user: "{{ user_key.username }}"
+     copy:
+       src:    "{{ user_key.key_file }}{{ item.ext }}"
+       dest:   "{{ target_key_file }}{{ item.ext }}"
+       mode:   "{{ item.mode }}"
+       force:  yes
+       seuser: system_u
+       serole: object_r
+       setype: ssh_home_t
+     ignore_errors: yes
+     when: user_key.state | default('present') == 'present'
+     with_items:
+      - { ext: '',     mode: '0600' }
+      - { ext: '.pub', mode: '0644' }
+
+  when: user_key.key_file is defined
+
+
+- name: "Install User Key from Content"
   become_user: "{{ user_key.username }}"
   copy:
-    src:    "{{ user_key.key_file }}{{ item.ext }}"
-    dest:   "{{ target_key_file }}{{ item.ext }}"
-    mode:   "{{ item.mode }}"
-    force:  yes
-    seuser: system_u
-    serole: object_r
-    setype: ssh_home_t
+    content: "{{ item.content }}"
+    dest:    "{{ target_key_file }}{{ item.ext }}"
+    mode:    "{{ item.mode }}"
+    force:   yes
+    seuser:  system_u
+    serole:  object_r
+    setype:  ssh_home_t
   ignore_errors: yes
   when: user_key.state | default('present') == 'present'
   with_items:
-   - { ext: '',     mode: '0600' }
-   - { ext: '.pub', mode: '0644' }
+   - { ext: '',     mode: '0600', content: "{{ user_key.key_content.private }}" }
+   - { ext: '.pub', mode: '0644', content: "{{ user_key.key_content.public }}" }
+  when: user_key.key_content is defined
 
 
 - name: "Clean Sensitive Data"

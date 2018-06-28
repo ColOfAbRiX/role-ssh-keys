@@ -25,64 +25,87 @@ ssh_knownhosts_files:
 ## Keys Section ##
 
 
-# Definition of the SSH Server Keys
-#
-# Use key from storage
-#ssh_host_keys:
-# - name:     ssh_host_rsa_key
-#   key_file: "{{ ssh_host_keys_base }}/ssh_host_rsa_key"
-#   type:     rsa
-#   bits:     2048
+# SSH Server Keypairs. These are the keys that are used by the SSH server.
+# The host keys can be either files or content of variables but not both at the
+# same time. If using files, Ansible will use the code repository to store the
+# keys as primary source. Read the comments on the examples below for more
+# details.
+ssh_host_keys: []
+# # Definition of an Ed25519 key for the host. If the key is not present at all
+# # it will be created on the target machine and downloaded locally to Ansible.
+# # If the key is present in Ansible it will be installed on the target machine
+# # overwriting any existing key and if the key is present remotely it will just
+# # be download locally to Ansible. Check the file <role>/library/ssh_keygen.py
+# # for the full list of options available when creating a new key.
 # - name:     ssh_host_ed25519_key
 #   key_file: "{{ ssh_host_keys_base }}/ssh_host_ed25519_key"
 #   type:     ed25519
 #   bits:     256
-# - name:     ssh_host_ecdsa_key
-#   key_file: "{{ ssh_host_keys_base }}/ssh_host_ecdsa_key"
-#   type:     ecdsa
-#   bits:     256
-ssh_host_keys: []
+# # Here they keypair is specified as content of variables and they will be
+# # saved as files on the target machines. No files local to Ansible will be
+# # created. Never store private keys in clear text!
+# - name:     ssh_host_ed25519_key
+#   key_content:
+#     private: "{{ my_vaulted_private_key }}"
+#     public:  "ssh-ed25519 AAAAC3Nz..."
 
-# User Keys configuration. For the options to create the keys,
-# see the module ssh_keygen
-#
-# ssh_user_keys:
-#  # Uses the key in the local store, but it uses the one on the server and
-#  # if also that one is not present, it creates it.
-#  - username:    user1
-#    state:       present
-#    key_file:    "{{ ssh_user_keys_base }}/user1_key"
-#    target_file: "{{ ssh_identity_files | first }}"
-#    type:        dsa
-#    bits:        2048
-#  # This creates they if not present and discards any existing
-#  # key on the server, if not present locally.
-#  - username:    user1
-#    state:       present
-#    key_file:    "{{ ssh_user_keys_base }}/user1_key"
-#    target_file: "{{ ssh_identity_files | first }}"
-#    ignore_present: yes
+# SSH User Keypairs. These are the keys that are used by the SSH clients.
+# The host keys can be either files or content of variables but not both at the
+# same time. If using files, Ansible will use the code repository to store the
+# keys as primary source. Read the comments on the examples below for more
+# details.
 ssh_user_keys: []
+# # Uses the key in the local store, but it uses the one on the server and
+# # if also that one is not present, it creates it.
+# - username:    user1
+#   state:       present
+#   key_file:    "{{ ssh_user_keys_base }}/user1_key"
+#   target_file: "{{ ssh_identity_files | first }}"
+#   type:        dsa
+#   bits:        2048
+# # This creates they if not present and discards any existing key on the
+# # server, if not present locally.
+# - username:    user1
+#   state:       present
+#   key_file:    "{{ ssh_user_keys_base }}/user1_key"
+#   target_file: "{{ ssh_identity_files | first }}"
+#   ignore_present: yes
+# # Here they keypair is specified as content of variables and they will be
+# # saved as files on the target machines. No files local to Ansible will be
+# # created. Never store private keys in clear text!
+# - username:    user1
+#   state:       present
+#   key_content:
+#     private:   "{{ my_vaulted_private_key }}"
+#     public:    "ssh-ed25519 AAAAC3Nz..."
 
-# Keys authorized by SSH
-#
-# ssh_authorized_keys:
-#  - username: user1
-#    state: present
-#    key_file: "{{ ssh_user_keys_base }}/user1.pub"
-#  - username: user2
-#    key_options: ""
-#    key_file: "{{ ssh_user_keys_base }}/user2.pub"
-#    authkeys_file: "/etc/ssh/authorized_keys/authorized_keys_global"
+# SSH User Keys trusted by the Server.
 ssh_authorized_keys: []
+# # Basic example of trusting a user key.
+# - username:    user1
+#   state:       present
+#   key_file:    "{{ ssh_user_keys_base }}/user1.pub"
+# # Here a specific authorized_keys file is specified
+# - username:    user2
+#   key_options: ""
+#   key_file:    "{{ ssh_user_keys_base }}/user2.pub"
+#   authkeys_file: "/etc/ssh/authorized_keys/authorized_keys_global"
+# # The SSH key to authorize can also be specified as string content
+# - username:    user1
+#   state:       present
+#   key_content: "ssh-ed25519 AAAAC3Nz..."
 
-# List of acknowleded hosts for a specific user
-#
-# ssh_known_hosts:
+# SSH Server Keys trusted by the Clients.
+ssh_known_hosts: []
+# # Trusting server keys for user1 using first ssh_knownhosts_files[0]
 # - username: user1
 #   target_file: "{{ ssh_knownhosts_files | first }}"
 #   hosts:
-#    - name:     my_host
+#    # Trusting host server1 whose key can be found in the local storage
+#    - name:     server1
 #      state:    present
 #      key_file: "../storage/ssh_keys/servers/my_host.pub"
-ssh_known_hosts: []
+#    # Trusting host server2 whose key is given as text
+#    - name:     server2
+#      state:    present
+#      key_content: "ssh-ed25519 AAAAC3Nz..."

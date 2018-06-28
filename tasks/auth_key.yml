@@ -1,5 +1,11 @@
 ---
 
+- name: "Check Auth Key Information"
+  assert:
+    that:
+     - (user_key.key_file is defined) != (user_key.key_content is defined)
+    msg: "One and only one of ssh_authorized_keys.*.key_file or ssh_authorized_keys.*.key_content must be defined."
+
 - name: "Get User Information"
   getent:
     database: passwd
@@ -10,7 +16,7 @@
     authkeys_file: "{{ user_key.authkeys_file | default(ssh_authkeys_files | first) | authfile_replace(getent_passwd) }}"
     is_local:     "{{ user_key.authkeys_file | default(ssh_authkeys_files | first) | is_local_path }}"
 
-- name: "Authorize Key"
+- name: "Authorize Key from File"
   become_user: "{{ user_key.username }}"
   authorized_key:
     user:  "{{ user_key.username }}"
@@ -19,6 +25,18 @@
     path:  "{{ authkeys_file }}"
     key_options: "{{ user_key.key_options | default(omit) }}"
     manage_dir: no
+  when: user_key.key_file is defined
+
+- name: "Authorize Key from Content"
+  become_user: "{{ user_key.username }}"
+  authorized_key:
+    user:  "{{ user_key.username }}"
+    state: "{{ user_key.state | default(omit) }}"
+    key:   "{{ user_key.key_content }}"
+    path:  "{{ authkeys_file }}"
+    key_options: "{{ user_key.key_options | default(omit) }}"
+    manage_dir: no
+  when: user_key.key_content is defined
 
 - name: "Set Ownership for Global File"
   file: path="{{ authkeys_file }}" owner=root group=root

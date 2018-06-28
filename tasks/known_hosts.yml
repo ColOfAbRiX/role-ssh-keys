@@ -1,5 +1,13 @@
 ---
 
+- name: "Check Known Host Keys Information"
+  assert:
+    that:
+     - (item.key_file is defined) != (item.key_content is defined)
+    msg: "One and only one of ssh_known_hosts.*.hosts.*.key_file or ssh_known_hosts.*.hosts.*.key_content must be defined."
+  with_items:
+   - "{{ user_known.hosts }}"
+
 - set_fact:
     known_hosts_file: "{{ user_known.target_file | default(ssh_knownhosts_files | first) }}"
 
@@ -12,7 +20,7 @@
     serole: object_r
     setype: ssh_home_t
 
-- name: "Acknowledge Host"
+- name: "Acknowledge Host from Key File"
   known_hosts:
     state: "{{ item.state | default(omit) }}"
     name:  "{{ item.name }}"
@@ -20,3 +28,14 @@
     key:   "{{ item.name }} {{ lookup('file', item.key_file) }}"
   with_items:
    - "{{ user_known.hosts }}"
+  when: item.key_file is defined
+
+- name: "Acknowledge Host from Key Content"
+  known_hosts:
+    state: "{{ item.state | default(omit) }}"
+    name:  "{{ item.name }}"
+    path:  "{{ known_hosts_file }}"
+    key:   "{{ item.name }} {{ item.key_content) }}"
+  with_items:
+   - "{{ user_known.hosts }}"
+  when: item.key_content is defined

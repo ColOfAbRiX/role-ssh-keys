@@ -1,38 +1,50 @@
-Role Name
-=========
+# role-ssh-keys
 
-A brief description of the role goes here.
+Ansible role to install and configure Sudo and Sudo-LDAP.
 
-Requirements
-------------
+The role is fully generic and supports all the Sudo settings plus some more behaviours. It also supports the configuration of SUDO-LDAP, to integrate SUDO with any LDAP system and store the configuration in one central place.
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+The role is configured to create the default OS configuration.
 
-Role Variables
---------------
+## Requirements
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+The role requires RHEL/CentOS 7 to work.
 
-Dependencies
-------------
+## Role Variables
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+The variables are fully documented in the [default configuration](defaults/main.yml) file, including their default values and some examples. This file contains all the settings that can be configured.
 
-Example Playbook
-----------------
+Please refer to the default configuration file for the full list and use Linux man pages if you need more information on Sudo.
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+| Variable               | Default                 | Description                                  |
+| :---                   | :---                    | :---                                         |
+| `sudo_safety_state`    | `present`               | If 'present' it will create a safety system that replaces wrong sudo files. |
+| `sudo_safe_file`       | `/etc/sudo-safe.tar.gz` | Name of the backup file.                     |
+| `sudoers_host_aliases` | `[]`                    | Host aliases to add into /etc/sudoers.       |
+| `sudoers_user_aliases` | `[]`                    | User aliases to add into /etc/sudoers.       |
+| `sudoers_cmnd_aliases` | `...`                   | Command aliases to add into /etc/sudoers.    |
+| `sudoers_defaults`     | `...`                   | Defaults to add into /etc/sudoers.           |
+| `sudoers_entries`      | `...`                   | The custom entries to put into /etc/sudoers. |
+| `sudoers_sudoers_d`    | `[]`                    | Custom files into /etc/sudoers.d.            |
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+## Example Playbook
 
-License
--------
+Using the role without any specific configuration is very simple:
 
-BSD
+```Yaml
+- hosts: servers
+  roles:
+   - role: sudo
+```
 
-Author Information
-------------------
+## License
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+MIT
+
+## Author Information
+
+[Fabrizio Colonna](colofabrix@tin.it)
+
+## Contributors
+
+Pull requests are also very welcome. Please create a topic branch for your proposed changes. If you don't, this will create conflicts in your fork after the merge.
