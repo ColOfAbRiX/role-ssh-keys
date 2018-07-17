@@ -1,22 +1,22 @@
 ---
 
-- name: "Check Auth Key Information"
+- name: "Check Auth Key Information : {{ user_key.username }}"
   assert:
     that:
      - (user_key.key_file is defined) != (user_key.key_content is defined)
     msg: "One and only one of ssh_authorized_keys.*.key_file or ssh_authorized_keys.*.key_content must be defined."
 
-- name: "Get User Information"
+- name: "Get User Information : {{ user_key.username }}"
   getent:
     database: passwd
     key:      "{{ user_key.username }}"
 
-- name: "Build Information"
+- name: "Build Information : {{ user_key.username }}"
   set_fact:
     authkeys_file: "{{ user_key.authkeys_file | default(ssh_authkeys_files | first) | authfile_replace(getent_passwd) }}"
-    is_local:     "{{ user_key.authkeys_file | default(ssh_authkeys_files | first) | is_local_path }}"
+    is_local:      "{{ user_key.authkeys_file | default(ssh_authkeys_files | first) | is_local_path }}"
 
-- name: "Authorize Key from File"
+- name: "Authorize Key from File : {{ user_key.username }}"
   become_user: "{{ user_key.username }}"
   authorized_key:
     user:  "{{ user_key.username }}"
@@ -27,7 +27,7 @@
     manage_dir: no
   when: user_key.key_file is defined
 
-- name: "Authorize Key from Content"
+- name: "Authorize Key from Content : {{ user_key.username }}"
   become_user: "{{ user_key.username }}"
   authorized_key:
     user:  "{{ user_key.username }}"
@@ -38,6 +38,6 @@
     manage_dir: no
   when: user_key.key_content is defined
 
-- name: "Set Ownership for Global File"
+- name: "Set Ownership for Global File : {{ user_key.username }}"
   file: path="{{ authkeys_file }}" owner=root group=root
   when: not is_local

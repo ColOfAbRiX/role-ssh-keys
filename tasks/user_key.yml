@@ -1,31 +1,31 @@
 ---
 
-- name: "Check Host Key Information"
+- name: "Check Host Key Information : {{ user_key.username }}"
   assert:
     that:
      - (user_key.key_file is defined) != (user_key.key_content is defined)
     msg: "One and only one of ssh_user_keys.*.key_file or ssh_user_keys.*.key_content must be defined."
 
-- name: "Build Information"
+- name: "Build Information : {{ user_key.username }}"
   set_fact:
     target_key_file: "{{ user_key.target_file | default(ssh_identity_files | first) }}"
 
-- name: "SSH User Directory"
+- name: "SSH User Directory : {{ user_key.username }}"
   become_user: "{{ user_key.username }}"
   file:
-    path:  "{{ target_key_file | dirname }}"
-    state: directory
-    mode:  '0700'
+    path:    "{{ target_key_file | dirname }}"
+    state:   directory
+    mode:    '0700'
     seuser:  system_u
     serole:  object_r
     setype:  ssh_home_t
   when: user_key.state | default('present') == 'present'
 
 
-- name: "Managing User Key with Key in File"
+- name: "Managing User Key with Key in File : {{ user_key.username }}"
   block:
 
-   - name: "Remove User Key"
+   - name: "Remove User Key : {{ user_key.username }}"
      file: path="{{ item }}" state=absent
      with_items:
       - "{{ target_key_file }}"
@@ -33,14 +33,14 @@
      when: user_key.state | default('present') == 'absent'
 
 
-   - name: "Test Local User Key"
+   - name: "Test Local User Key : {{ user_key.username }}"
      set_fact:
        key_present: "{{ lookup('file', user_key.key_file) }}"
      no_log: true
      ignore_errors: yes
      when: user_key.state | default('present') == 'present'
 
-   - name: "Create User Key"
+   - name: "Create User Key : {{ user_key.username }}"
      become_user: "{{ user_key.username }}"
      ssh_keygen:
        bits:       "{{ user_key.bits | default(omit) }}"
@@ -56,7 +56,7 @@
      when: user_key.state | default('present') == 'present' and
            (key_present is not defined or not key_present)
 
-   - name: "Download User Key"
+   - name: "Download User Key : {{ user_key.username }}"
      become_user: "{{ user_key.username }}"
      fetch:
        src:  "{{ target_key_file }}{{ item }}"
@@ -67,7 +67,7 @@
      with_items: ['', '.pub']
 
 
-   - name: "Install User Key"
+   - name: "Install User Key : {{ user_key.username }}"
      become_user: "{{ user_key.username }}"
      copy:
        src:    "{{ user_key.key_file }}{{ item.ext }}"
@@ -86,7 +86,7 @@
   when: user_key.key_file is defined
 
 
-- name: "Install User Key from Content"
+- name: "Install User Key from Content : {{ user_key.username }}"
   become_user: "{{ user_key.username }}"
   copy:
     content: "{{ item.content }}"
@@ -104,6 +104,6 @@
   when: user_key.key_content is defined
 
 
-- name: "Clean Sensitive Data"
+- name: "Clean Sensitive Data : {{ user_key.username }}"
   set_fact:
     key_present: !!null

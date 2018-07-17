@@ -3,9 +3,11 @@
 
 - name: "Require Correct Linux Distribution"
   assert:
-    that: ansible_distribution | lower in ['redhat', 'centos', 'sles']
-    msg:  "This Linux distrution is not supported by the role."
-  tags: [openssh, ssh-keys]
+    that: (ansible_distribution in ['CentOS', 'RedHat'] and ansible_distribution_version | version_compare('6.0.0', '>=')) or
+          (ansible_distribution == 'Debian'             and ansible_distribution_version | version_compare('7.0.0', '>=')) or
+          (ansible_distribution == 'Ubuntu'             and ansible_distribution_version | version_compare('14.0.0', '>='))
+    msg:  "This Linux distribution '{{ ansible_distribution }} {{ ansible_distribution_version }}' is not supported by the role."
+  tags: ssh-keys
 
 - name: "Host Keys Management"
   include: host_key.yml
@@ -13,7 +15,7 @@
    - "{{ ssh_host_keys | default([]) }}"
   loop_control:
     loop_var: host_key
-  tags: [openssh, ssh-keys]
+  tags: ssh-keys
 
 - name: "User Keys Management"
   include: user_key.yml
@@ -21,7 +23,7 @@
    - "{{ ssh_user_keys | default([]) }}"
   loop_control:
     loop_var: user_key
-  tags: [openssh, ssh-keys]
+  tags: ssh-keys
 
 - name: "Known Hosts File"
   become_user: "{{ user_known.username }}"
@@ -30,7 +32,7 @@
    - "{{ ssh_known_hosts | default([]) }}"
   loop_control:
     loop_var: user_known
-  tags: [openssh, ssh-keys]
+  tags: ssh-keys
 
 - name: "Authorized Keys File"
   include: auth_key.yml
@@ -38,4 +40,4 @@
    - "{{ ssh_authorized_keys | default([]) }}"
   loop_control:
     loop_var: user_key
-  tags: [openssh, ssh-keys]
+  tags: ssh-keys

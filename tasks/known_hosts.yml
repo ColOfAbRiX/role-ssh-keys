@@ -11,7 +11,7 @@
 - set_fact:
     known_hosts_file: "{{ user_known.target_file | default(ssh_knownhosts_files | first) }}"
 
-- name: "SSH User Directory"
+- name: "SSH User Directory : {{ known_hosts_file }}"
   file:
     path:   "{{ known_hosts_file | dirname }}"
     state:  directory
@@ -20,7 +20,7 @@
     serole: object_r
     setype: ssh_home_t
 
-- name: "Acknowledge Host from Key File"
+- name: "Acknowledge Host from Key File : {{ known_hosts_file }}"
   known_hosts:
     state: "{{ item.state | default(omit) }}"
     name:  "{{ item.name }}"
@@ -30,7 +30,7 @@
    - "{{ user_known.hosts }}"
   when: item.key_file is defined
 
-- name: "Acknowledge Host from Key Content"
+- name: "Acknowledge Host from Key Content : {{ known_hosts_file }}"
   known_hosts:
     state: "{{ item.state | default(omit) }}"
     name:  "{{ item.name }}"

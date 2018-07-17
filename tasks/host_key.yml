@@ -8,9 +8,10 @@
 
 - name: "Build Information"
   set_fact:
-     target_key_file: "{{ ssh_config_path }}/{{ host_key.key_file | basename }}"
+     target_key_file:      "{{ ssh_config_path }}/{{ host_key.key_file | basename }}"
+     target_key_file_name: "{{ host_key.key_file | basename }}"
 
-- name: "Remove Host Key"
+- name: "Remove Host Key : {{ target_key_file_name }}"
   file: path="{{ target_key_file }}{{ item }}" state=absent
   when: host_key.state | default('present') == 'absent'
   with_items: ['', '.pub']
@@ -18,17 +19,17 @@
    - Restart SSH
 
 
-- name: "Managing Host Key with Key in File"
+- name: "Managing Host Key with Key in File : {{ target_key_file_name }}"
   block:
 
-   - name: "Test Local Host Key"
+   - name: "Test Local Host Key : {{ target_key_file_name }}"
      set_fact:
        key_present: "{{ lookup('file', host_key.key_file) }}"
      no_log: true
      ignore_errors: yes
      when: host_key.state | default('present') == 'present'
 
-   - name: "Create Host Key"
+   - name: "Create Host Key : {{ target_key_file_name }}"
      ssh_keygen:
        bits:       "{{ host_key.bits | default(omit) }}"
        comment:    "{{ host_key.comment | default(omit) }}"
@@ -43,7 +44,7 @@
      when: host_key.state | default('present') == 'present' and
            (key_present is not defined or not key_present)
 
-   - name: "Download Host Key"
+   - name: "Download Host Key : {{ target_key_file_name }}"
      fetch:
        src:  "{{ target_key_file }}{{ item }}"
        dest: "{{ host_key.key_file }}{{ item }}"
@@ -52,7 +53,7 @@
            (key_present is not defined or not key_present)
      with_items: ['', '.pub']
 
-   - name: "Install Host Key"
+   - name: "Install Host Key : {{ target_key_file_name }}"
      copy:
        src:    "{{ host_key.key_file }}{{ item.ext }}"
        dest:   "{{ target_key_file }}{{ item.ext }}"
@@ -73,7 +74,7 @@
   when: host_key.key_file is defined
 
 
-- name: "Install Host Key from Content"
+- name: "Install Host Key from Content : {{ target_key_file_name }}"
   copy:
     content: "{{ item.content }}"
     dest:    "{{ target_key_file }}{{ item.ext }}"
@@ -93,6 +94,6 @@
   when: host_key.key_content is defined
 
 
-- name: "Clean Sensitive Data"
+- name: "Clean Sensitive Data : {{ target_key_file_name }}"
   set_fact:
     key_present: !!null
