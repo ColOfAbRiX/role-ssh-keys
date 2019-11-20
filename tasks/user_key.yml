@@ -5,10 +5,12 @@
     that:
      - (user_key.key_file is defined) != (user_key.key_content is defined)
     msg: "One and only one of ssh_user_keys.*.key_file or ssh_user_keys.*.key_content must be defined."
+  tags: ssh-keys
 
 - name: "Build Information : {{ user_key.username }}"
   set_fact:
     target_key_file: "{{ user_key.target_file | default(ssh_identity_files | first) }}"
+  tags: ssh-keys
 
 - name: "SSH User Directory : {{ user_key.username }}"
   become_user: "{{ user_key.username }}"
@@ -20,6 +22,7 @@
     serole:  object_r
     setype:  ssh_home_t
   when: user_key.state | default('present') == 'present'
+  tags: ssh-keys
 
 
 - name: "Managing User Key with Key in File : {{ user_key.username }}"
@@ -84,6 +87,7 @@
       - { ext: '.pub', mode: '0644' }
 
   when: user_key.key_file is defined
+  tags: ssh-keys
 
 
 - name: "Install User Key from Content : {{ user_key.username }}"
@@ -97,13 +101,14 @@
     serole:  object_r
     setype:  ssh_home_t
   ignore_errors: yes
-  when: user_key.state | default('present') == 'present'
   with_items:
    - { ext: '',     mode: '0600', content: "{{ user_key.key_content.private }}" }
    - { ext: '.pub', mode: '0644', content: "{{ user_key.key_content.public }}" }
   when: user_key.key_content is defined
+  tags: ssh-keys
 
 
 - name: "Clean Sensitive Data : {{ user_key.username }}"
   set_fact:
     key_present: !!null
+  tags: ssh-keys

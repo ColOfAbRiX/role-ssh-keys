@@ -10,6 +10,7 @@
   set_fact:
      target_key_file:      "{{ ssh_config_path }}/{{ host_key.key_file | basename }}"
      target_key_file_name: "{{ host_key.key_file | basename }}"
+  tags: ssh-keys
 
 - name: "Remove Host Key : {{ target_key_file_name }}"
   file: path="{{ target_key_file }}{{ item }}" state=absent
@@ -17,6 +18,7 @@
   with_items: ['', '.pub']
   notify:
    - Restart SSH
+  tags: ssh-keys
 
 
 - name: "Managing Host Key with Key in File : {{ target_key_file_name }}"
@@ -72,6 +74,7 @@
       - Restart SSH
 
   when: host_key.key_file is defined
+  tags: ssh-keys
 
 
 - name: "Install Host Key from Content : {{ target_key_file_name }}"
@@ -85,7 +88,6 @@
     serole:  object_r
     setype:  sshd_key_t
   ignore_errors: yes
-  when: host_key.state | default('present') == 'present'
   with_items:
    - { ext: '',     owner: root, group: ssh_keys, mode: '0600', content: "{{ host_key.key_content.private }}" }
    - { ext: '.pub', owner: root, group: root,     mode: '0644', content: "{{ host_key.key_content.public }}" }
@@ -97,3 +99,4 @@
 - name: "Clean Sensitive Data : {{ target_key_file_name }}"
   set_fact:
     key_present: !!null
+  tags: ssh-keys

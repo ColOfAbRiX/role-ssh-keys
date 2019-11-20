@@ -7,9 +7,11 @@
     msg: "One and only one of ssh_known_hosts.*.hosts.*.key_file or ssh_known_hosts.*.hosts.*.key_content must be defined."
   with_items:
    - "{{ user_known.hosts }}"
+  tags: ssh-keys
 
 - set_fact:
     known_hosts_file: "{{ user_known.target_file | default(ssh_knownhosts_files | first) }}"
+  tags: ssh-keys
 
 - name: "SSH User Directory : {{ known_hosts_file }}"
   file:
@@ -19,6 +21,7 @@
     seuser: system_u
     serole: object_r
     setype: ssh_home_t
+  tags: ssh-keys
 
 - name: "Acknowledge Host from Key File : {{ known_hosts_file }}"
   known_hosts:
@@ -29,6 +32,7 @@
   with_items:
    - "{{ user_known.hosts }}"
   when: item.key_file is defined
+  tags: ssh-keys
 
 - name: "Acknowledge Host from Key Content : {{ known_hosts_file }}"
   known_hosts:
@@ -39,3 +43,4 @@
   with_items:
    - "{{ user_known.hosts }}"
   when: item.key_content is defined
+  tags: ssh-keys
