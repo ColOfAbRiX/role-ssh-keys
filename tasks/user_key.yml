@@ -83,7 +83,7 @@
      ignore_errors: yes
      when: user_key.state | default('present') == 'present'
      with_items:
-      - { ext: '',     mode: '0600' }
+      - { ext: '',     mode: '0400' }
       - { ext: '.pub', mode: '0644' }
 
   when: user_key.key_file is defined
@@ -102,7 +102,7 @@
     setype:  ssh_home_t
   ignore_errors: yes
   with_items:
-   - { ext: '',     mode: '0600', content: "{{ user_key.key_content.private }}" }
+   - { ext: '',     mode: '0400', content: "{{ user_key.key_content.private }}" }
    - { ext: '.pub', mode: '0644', content: "{{ user_key.key_content.public }}" }
   when: user_key.key_content is defined
   tags: ssh-keys
