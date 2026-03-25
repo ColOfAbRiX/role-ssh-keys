@@ -24,7 +24,6 @@
   when: user_key.state | default('present') == 'present'
   tags: ssh-keys
 
-
 - name: "Managing User Key with Key in File : {{ user_key.username }}"
   block:
 
@@ -58,6 +57,7 @@
        path:       "{{ target_key_file }}"
        rounds:     "{{ user_key.rounds | default(omit) }}"
        type:       "{{ user_key.type | default(omit) }}"
+     no_log: true
      register: user_key_created
      when: user_key.state | default('present') == 'present' and
            (key_present is not defined or not key_present)
