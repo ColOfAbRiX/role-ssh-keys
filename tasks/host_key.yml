@@ -5,17 +5,21 @@
     that:
      - (host_key.key_file is defined) != (host_key.key_content is defined)
     msg: "One and only one of ssh_host_keys.*.key_file or ssh_host_keys.*.key_content must be defined."
+  tags: ssh-keys
 
 - name: "Build Information"
   set_fact:
      target_key_file:      "{{ ssh_config_path }}/{{ host_key.key_file | basename }}"
      target_key_file_name: "{{ host_key.key_file | basename }}"
+     cacheable: false
   tags: ssh-keys
 
 - name: "Remove Host Key : {{ target_key_file_name }}"
-  file: path="{{ target_key_file }}{{ item }}" state=absent
+  file:
+    path: "{{ target_key_file }}{{ item }}"
+    state: absent
   when: host_key.state | default('present') == 'absent'
-  with_items: ['', '.pub']
+  loop: ['', '.pub']
   notify:
    - Restart SSH
   tags: ssh-keys
@@ -27,8 +31,9 @@
    - name: "Test Local Host Key : {{ target_key_file_name }}"
      set_fact:
        key_present: "{{ lookup('file', host_key.key_file) }}"
+       cacheable: false
      no_log: true
-     ignore_errors: yes
+     ignore_errors: true
      when: host_key.state | default('present') == 'present'
 
    - name: "Create Host Key : {{ target_key_file_name }}"
@@ -50,10 +55,10 @@
      fetch:
        src:  "{{ target_key_file }}{{ item }}"
        dest: "{{ host_key.key_file }}{{ item }}"
-       flat: yes
+       flat: true
      when: host_key.state | default('present') == 'present' and
            (key_present is not defined or not key_present)
-     with_items: ['', '.pub']
+     loop: ['', '.pub']
 
    - name: "Install Host Key : {{ target_key_file_name }}"
      copy:
@@ -65,9 +70,9 @@
        seuser: system_u
        serole: object_r
        setype: sshd_key_t
-     ignore_errors: yes
+     ignore_errors: true
      when: host_key.state | default('present') == 'present'
-     with_items:
+     loop:
       - { ext: '',     owner: root, group: ssh_keys, mode: '0600' }
       - { ext: '.pub', owner: root, group: root,     mode: '0644' }
      notify:
@@ -87,16 +92,18 @@
     seuser:  system_u
     serole:  object_r
     setype:  sshd_key_t
-  ignore_errors: yes
-  with_items:
+  ignore_errors: true
+  loop:
    - { ext: '',     owner: root, group: ssh_keys, mode: '0600', content: "{{ host_key.key_content.private }}" }
    - { ext: '.pub', owner: root, group: root,     mode: '0644', content: "{{ host_key.key_content.public }}" }
   notify:
    - Restart SSH
   when: host_key.key_content is defined
+  tags: ssh-keys
 
 
 - name: "Clean Sensitive Data : {{ target_key_file_name }}"
   set_fact:
     key_present: !!null
+    cacheable: false
   tags: ssh-keys

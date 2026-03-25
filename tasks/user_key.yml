@@ -29,8 +29,10 @@
   block:
 
    - name: "Remove User Key : {{ user_key.username }}"
-     file: path="{{ item }}" state=absent
-     with_items:
+     file:
+       path: "{{ item }}"
+       state: absent
+     loop:
       - "{{ target_key_file }}"
       - "{{ target_key_file }}.pub"
      when: user_key.state | default('present') == 'absent'
@@ -39,8 +41,9 @@
    - name: "Test Local User Key : {{ user_key.username }}"
      set_fact:
        key_present: "{{ lookup('file', user_key.key_file) }}"
+       cacheable: false
      no_log: true
-     ignore_errors: yes
+     ignore_errors: true
      when: user_key.state | default('present') == 'present'
 
    - name: "Create User Key : {{ user_key.username }}"
@@ -64,10 +67,10 @@
      fetch:
        src:  "{{ target_key_file }}{{ item }}"
        dest: "{{ user_key.key_file }}{{ item }}"
-       flat: yes
+       flat: true
      when: user_key.state | default('present') == 'present' and
            (key_present is not defined or not key_present)
-     with_items: ['', '.pub']
+     loop: ['', '.pub']
 
 
    - name: "Install User Key : {{ user_key.username }}"
@@ -76,13 +79,13 @@
        src:    "{{ user_key.key_file }}{{ item.ext }}"
        dest:   "{{ target_key_file }}{{ item.ext }}"
        mode:   "{{ item.mode }}"
-       force:  yes
+       force:  true
        seuser: system_u
        serole: object_r
        setype: ssh_home_t
-     ignore_errors: yes
+     ignore_errors: true
      when: user_key.state | default('present') == 'present'
-     with_items:
+     loop:
       - { ext: '',     mode: '0400' }
       - { ext: '.pub', mode: '0644' }
 
@@ -96,12 +99,12 @@
     content: "{{ item.content }}"
     dest:    "{{ target_key_file }}{{ item.ext }}"
     mode:    "{{ item.mode }}"
-    force:   yes
+    force:   true
     seuser:  system_u
     serole:  object_r
     setype:  ssh_home_t
-  ignore_errors: yes
-  with_items:
+  ignore_errors: true
+  loop:
    - { ext: '',     mode: '0400', content: "{{ user_key.key_content.private }}" }
    - { ext: '.pub', mode: '0644', content: "{{ user_key.key_content.public }}" }
   when: user_key.key_content is defined

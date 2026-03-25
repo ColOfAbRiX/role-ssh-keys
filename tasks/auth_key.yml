@@ -17,6 +17,7 @@
   set_fact:
     authkeys_file: "{{ user_key.authkeys_file | default(ssh_authkeys_files | first) | authfile_replace(getent_passwd) }}"
     is_local:      "{{ user_key.authkeys_file | default(ssh_authkeys_files | first) | is_local_path }}"
+    cacheable: false
   tags: ssh-keys
 
 - name: "Authorize Key from File : {{ user_key.username }}"
@@ -27,7 +28,7 @@
     key:   "{{ lookup('file', user_key.key_file) }}"
     path:  "{{ authkeys_file }}"
     key_options: "{{ user_key.key_options | default(omit) }}"
-    manage_dir: no
+    manage_dir: false
   when: user_key.key_file is defined
   tags: ssh-keys
 
@@ -39,11 +40,14 @@
     key:   "{{ user_key.key_content }}"
     path:  "{{ authkeys_file }}"
     key_options: "{{ user_key.key_options | default(omit) }}"
-    manage_dir: no
+    manage_dir: false
   when: user_key.key_content is defined
   tags: ssh-keys
 
 - name: "Set Ownership for Global File : {{ user_key.username }}"
-  file: path="{{ authkeys_file }}" owner=root group=root
+  file:
+    path: "{{ authkeys_file }}"
+    owner: root
+    group: root
   when: not is_local
   tags: ssh-keys

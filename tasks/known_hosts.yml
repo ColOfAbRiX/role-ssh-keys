@@ -1,19 +1,24 @@
 ---
 
 - name: "Check Known Host Keys Information"
+  become_user: "{{ user_known.username }}"
   assert:
     that:
      - (item.key_file is defined) != (item.key_content is defined)
     msg: "One and only one of ssh_known_hosts.*.hosts.*.key_file or ssh_known_hosts.*.hosts.*.key_content must be defined."
-  with_items:
+  loop:
    - "{{ user_known.hosts }}"
   tags: ssh-keys
 
-- set_fact:
+- name: "Set known hosts file"
+  become_user: "{{ user_known.username }}"
+  set_fact:
     known_hosts_file: "{{ user_known.target_file | default(ssh_knownhosts_files | first) }}"
+    cacheable: false
   tags: ssh-keys
 
 - name: "SSH User Directory : {{ known_hosts_file }}"
+  become_user: "{{ user_known.username }}"
   file:
     path:   "{{ known_hosts_file | dirname }}"
     state:  directory
@@ -24,23 +29,25 @@
   tags: ssh-keys
 
 - name: "Acknowledge Host from Key File : {{ known_hosts_file }}"
+  become_user: "{{ user_known.username }}"
   known_hosts:
     state: "{{ item.state | default(omit) }}"
     name:  "{{ item.name }}"
     path:  "{{ known_hosts_file }}"
     key:   "{{ item.name }} {{ lookup('file', item.key_file) }}"
-  with_items:
+  loop:
    - "{{ user_known.hosts }}"
   when: item.key_file is defined
   tags: ssh-keys
 
 - name: "Acknowledge Host from Key Content : {{ known_hosts_file }}"
+  become_user: "{{ user_known.username }}"
   known_hosts:
     state: "{{ item.state | default(omit) }}"
     name:  "{{ item.name }}"
     path:  "{{ known_hosts_file }}"
-    key:   "{{ item.name }} {{ item.key_content) }}"
-  with_items:
+    key:   "{{ item.name }} {{ item.key_content }}"
+  loop:
    - "{{ user_known.hosts }}"
   when: item.key_content is defined
   tags: ssh-keys
