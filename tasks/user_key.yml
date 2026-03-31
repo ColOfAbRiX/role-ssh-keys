@@ -5,6 +5,7 @@
     that:
      - (user_key.key_file is defined) != (user_key.key_content is defined)
     msg: "One and only one of ssh_user_keys.*.key_file or ssh_user_keys.*.key_content must be defined."
+    quiet: true
   tags: ssh-keys
 
 - name: "Build Information : {{ user_key.username }}"

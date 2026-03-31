@@ -6,6 +6,7 @@
     that:
      - (item.key_file is defined) != (item.key_content is defined)
     msg: "One and only one of ssh_known_hosts.*.hosts.*.key_file or ssh_known_hosts.*.hosts.*.key_content must be defined."
+    quiet: true
   loop:
    - "{{ user_known.hosts }}"
   tags: ssh-keys
